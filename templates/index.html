@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<h2>Nube de remitentes</h2>
+
+<div class="cloud">
+{% set max = data.values()|max %}
+{% for sender, count in data.items() %}
+  <span class="tag"
+        style="font-size: {{ 12 + (count / max) * 30 }}px"
+        onclick="selectSender('{{ sender }}')">
+        {{ sender }} ({{ count }})
+  </span>
+{% endfor %}
+</div>
+
+<form id="deleteForm" method="post" style="display:none;">
+    <button type="submit">Eliminar todos los correos</button>
+</form>
+
+<script>
+function selectSender(sender) {
+    const form = document.getElementById("deleteForm");
+    form.action = "/delete/" + encodeURIComponent(sender);
+    form.style.display = "block";
+}
+</script>
+</body>
+</html>

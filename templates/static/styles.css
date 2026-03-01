@@ -1,0 +1,12 @@
+.cloud {
+    width: 80%;
+    margin: auto;
+}
+.tag {
+    margin: 8px;
+    cursor: pointer;
+    display: inline-block;
+}
+.tag:hover {
+    color: red;
+}
