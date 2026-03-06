@@ -2,6 +2,7 @@
 
 InboxSweep es una aplicación web en FastAPI para analizar remitentes de Gmail y limpiar correos en lote.
 Muestra una nube de remitentes con distinción por tamaño en función del numero de emails del mismo remitente, permite filtrar por periodos (1-6 meses) y encola la eliminación/movido a papelera en segundo plano.
+![Sin nombre](https://github.com/user-attachments/assets/6c908cb6-554d-454d-a043-5d8b9f9b89c2)
 
 ## Funcionalidades
 
