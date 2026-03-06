@@ -1,31 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InboxSweep</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<h2>Nube de remitentes</h2>
+<main class="layout">
+    <section class="panel">
+        <div id="jobAlert" class="alert alert-info" style="display:none;"></div>
 
-<div class="cloud">
-{% set max = data.values()|max %}
-{% for sender, count in data.items() %}
-  <span class="tag"
-        style="font-size: {{ 12 + (count / max) * 30 }}px"
-        onclick="selectSender('{{ sender }}')">
-        {{ sender }} ({{ count }})
-  </span>
-{% endfor %}
-</div>
+        <div class="panel-header">
+            <div>
+                <h1>InboxSweep</h1>
+                <p>Selecciona direcciones y encola su borrado o movimiento a papelera.</p>
+            </div>
+            <form class="filters" method="get" action="/">
+                <label for="months">Periodo</label>
+                <div class="filter-row">
+                    <select id="months" name="months">
+                        {% for option in period_options %}
+                        <option value="{{ option }}" {% if option == months %}selected{% endif %}>
+                            {% if option == 1 %}
+                            Último mes
+                            {% else %}
+                            Últimos {{ option }} meses
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </div>
+            </form>
+        </div>
 
-<form id="deleteForm" method="post" style="display:none;">
-    <button type="submit">Eliminar todos los correos</button>
-</form>
+        {% if data %}
+        {% set max_count = data.values() | max %}
+        <form id="bulkDeleteForm" class="bulk-delete-form">
+            <div class="actions-row">
+                <label class="select-all">
+                    <input type="checkbox" id="selectAllSenders">
+                    Seleccionar todo
+                </label>
+                <button type="submit" id="queueDeleteBtn" class="btn btn-danger">Eliminar seleccionados (encolar)</button>
+            </div>
+
+            <div class="cloud" id="cloud">
+                {% for sender, count in data.items() %}
+                <label class="tag tag-selectable" style="font-size: {{ 12 + (count / max_count) * 20 }}px">
+                    <input type="checkbox" name="sender" value="{{ sender }}" class="sender-checkbox">
+                    <span>{{ sender }} <span>({{ count }})</span></span>
+                </label>
+                {% endfor %}
+            </div>
+        </form>
+        {% else %}
+        <p class="empty">No se encontraron correos para este periodo.</p>
+        {% endif %}
+
+        <div id="jobSummary" class="job-summary" style="display:none;"></div>
+    </section>
+</main>
 
 <script>
-function selectSender(sender) {
-    const form = document.getElementById("deleteForm");
-    form.action = "/delete/" + encodeURIComponent(sender);
-    form.style.display = "block";
+const alertBox = document.getElementById("jobAlert");
+const summaryBox = document.getElementById("jobSummary");
+const form = document.getElementById("bulkDeleteForm");
+const selectAll = document.getElementById("selectAllSenders");
+const queueButton = document.getElementById("queueDeleteBtn");
+const monthsSelect = document.getElementById("months");
+
+function showAlert(type, text) {
+    alertBox.className = "alert alert-" + type;
+    alertBox.textContent = text;
+    alertBox.style.display = "block";
+}
+
+function renderSummary(job) {
+    const failed = job.results.filter(r => r.status === "error");
+    const refreshUrl = `/?months=${job.months}`;
+    summaryBox.innerHTML = `
+        <h3>Resumen del job</h3>
+        <p>Remitentes procesados: ${job.processed_senders}/${job.total_senders}</p>
+        <p>Mensajes procesados: ${job.processed_messages}</p>
+        <p>Eliminados: ${job.deleted_messages}</p>
+        <p>Movidos a papelera: ${job.trashed_messages}</p>
+        ${failed.length ? `<p>Errores: ${failed.length}</p>` : ""}
+        <div class="summary-actions">
+            <a class="btn btn-primary" href="${refreshUrl}">Refrescar nube ahora</a>
+        </div>
+    `;
+
+    if (failed.length) {
+        const ul = document.createElement("ul");
+        for (const item of failed) {
+            const li = document.createElement("li");
+            li.textContent = `${item.sender}: ${item.error}`;
+            ul.appendChild(li);
+        }
+        summaryBox.appendChild(ul);
+    }
+
+    summaryBox.style.display = "block";
+}
+
+async function pollJob(jobId) {
+    let keepPolling = true;
+
+    while (keepPolling) {
+        const response = await fetch(`/jobs/${jobId}`);
+        if (!response.ok) {
+            showAlert("error", "No se pudo consultar el estado del job.");
+            queueButton.disabled = false;
+            return;
+        }
+
+        const job = await response.json();
+        showAlert(
+            "info",
+            `Job ${job.status}. Procesados ${job.processed_senders}/${job.total_senders} remitentes. ` +
+            `Mensajes: ${job.processed_messages}, eliminados: ${job.deleted_messages}, papelera: ${job.trashed_messages}.`
+        );
+
+        if (job.status === "done") {
+            renderSummary(job);
+            queueButton.disabled = false;
+            keepPolling = false;
+            showAlert("success", "Proceso completado. Refrescando nube automáticamente...");
+            setTimeout(() => {
+                window.location.href = `/?months=${job.months}`;
+            }, 1200);
+            break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+}
+
+if (form) {
+    selectAll.addEventListener("change", () => {
+        const checkboxes = form.querySelectorAll(".sender-checkbox");
+        for (const checkbox of checkboxes) {
+            checkbox.checked = selectAll.checked;
+        }
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const selected = Array.from(form.querySelectorAll(".sender-checkbox:checked")).map(el => el.value);
+        if (!selected.length) {
+            showAlert("warning", "Selecciona al menos un remitente.");
+            return;
+        }
+
+        queueButton.disabled = true;
+        summaryBox.style.display = "none";
+        showAlert("info", "Encolando eliminación...");
+
+        const payload = {
+            senders: selected,
+            months: Number(monthsSelect.value || 1),
+        };
+
+        const response = await fetch("/queue-delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        const body = await response.json();
+        if (!response.ok) {
+            showAlert("error", body.error || "No se pudo encolar la operación.");
+            queueButton.disabled = false;
+            return;
+        }
+
+        showAlert("info", `Job en cola (${body.job_id}). Iniciando procesamiento...`);
+        await pollJob(body.job_id);
+    });
 }
 </script>
 </body>

@@ -1,12 +1,269 @@
-.cloud {
-    width: 80%;
-    margin: auto;
+:root {
+    --bg: #f4f7fb;
+    --panel: #ffffff;
+    --text: #0f172a;
+    --muted: #475569;
+    --primary: #0ea5e9;
+    --primary-dark: #0284c7;
+    --danger: #ef4444;
+    --danger-dark: #dc2626;
+    --border: #dbe3ef;
+    --tag-bg: #ecfeff;
+    --tag-border: #a5f3fc;
+    --tag-selected: #bae6fd;
 }
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background: radial-gradient(circle at top left, #e0f2fe, var(--bg) 40%);
+}
+
+.layout {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.panel {
+    width: min(1100px, 100%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 14px 45px rgba(15, 23, 42, 0.08);
+    padding: 24px;
+}
+
+.alert {
+    margin-bottom: 16px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+
+.alert-success {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.alert-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.alert-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.alert-info {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border-color: #bfdbfe;
+}
+
+.panel-header {
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 0 0 6px;
+    font-size: 1.8rem;
+}
+
+p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filters label {
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+}
+
+select {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    min-width: 220px;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+.btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: var(--danger-dark);
+}
+
+.cloud {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    line-height: 1.7;
+}
+
 .tag {
-    margin: 8px;
+    margin: 6px;
     cursor: pointer;
     display: inline-block;
+    border: 1px solid var(--tag-border);
+    border-radius: 999px;
+    background: var(--tag-bg);
+    color: #0c4a6e;
+    padding: 8px 12px;
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
+
 .tag:hover {
-    color: red;
+    transform: translateY(-1px);
+    background: #cffafe;
+}
+
+.selected-tag {
+    background: var(--tag-selected);
+    border-color: #7dd3fc;
+}
+
+.tag-selectable {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+}
+
+.tag-selectable input {
+    width: 16px;
+    height: 16px;
+    accent-color: #0284c7;
+}
+
+.tag span {
+    opacity: 0.75;
+}
+
+.delete-form {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.selected {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.empty {
+    padding: 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+}
+
+.actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.job-summary {
+    margin-top: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.job-summary h3 {
+    margin: 0 0 10px;
+}
+
+.job-summary p {
+    margin-bottom: 6px;
+}
+
+.summary-actions {
+    margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+    .panel {
+        padding: 16px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+    }
+
+    select {
+        min-width: 100%;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .actions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
